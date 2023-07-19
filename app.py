@@ -1,4 +1,3 @@
-from typing import List
 from flask import Flask, request, Response
 import requests
 
@@ -7,6 +6,8 @@ app = Flask("Webhook Distributor")
 with open("webhooks.txt", "r") as fp:
     hosts = [line.strip() for line in fp.readlines()]
 
+assert hosts, "Must at least have one host."
+
 
 @app.route(
     "/", defaults={"path": ""}, methods=["GET", "POST"]
@@ -14,9 +15,9 @@ with open("webhooks.txt", "r") as fp:
 @app.route("/<path>", methods=["GET", "POST"])
 def redirect_to_API_HOST(
     path: str,
-) -> List[
+) -> (
     Response
-]:  # NOTE var :path will be unused as all path we need will be read from :request i.e. from flask import request
+):  # NOTE var :path will be unused as all path we need will be read from :request i.e. from flask import request
     responses = []
     for host in hosts:
         res = requests.request(  # ref. https://stackoverflow.com/a/36601467/248616
@@ -49,8 +50,9 @@ def redirect_to_API_HOST(
         responses.append(response)
 
     # TypeError: Object of type Response is not JSON serializable
-    # return responses
-    return "Success"
+    # Just randomly return a response...
+    # return a normal Discord response otherwise DiscordWebhook will got wrong
+    return responses[0]
 
 
 if __name__ == "__main__":
