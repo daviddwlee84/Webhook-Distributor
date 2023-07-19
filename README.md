@@ -7,7 +7,7 @@ Receive HTTP request and call HTTPS servers like Discord Webhook
 
 1. Add Discord webhooks to `webhooks.txt` 
 2. Install dependencies `pip install -r requirements.txt`
-3. Start server `python app.py`
+3. Start server `docker compose up --build` (Run without docker `python app.py`)
 4. (optional) test with `python debug.py` in a separate terminal
 
 ## Note
