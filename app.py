@@ -18,7 +18,7 @@ def redirect_to_API_HOST(
 ) -> (
     Response
 ):  # NOTE var :path will be unused as all path we need will be read from :request i.e. from flask import request
-    responses = []
+    responses = {}
     for host in hosts:
         res = requests.request(  # ref. https://stackoverflow.com/a/36601467/248616
             method=request.method,
@@ -44,15 +44,14 @@ def redirect_to_API_HOST(
         ]
         # endregion exclude some keys in :res response
 
-        print(host, res)
+        print(host, res, res.content)
+        responses[host] = res.status_code
 
-        response = Response(res.content, res.status_code, headers)
-        responses.append(response)
+    # response = Response(responses, res.status_code, headers)
 
     # TypeError: Object of type Response is not JSON serializable
-    # Just randomly return a response...
     # return a normal Discord response otherwise DiscordWebhook will got wrong
-    return responses[0]
+    return responses
 
 
 if __name__ == "__main__":
