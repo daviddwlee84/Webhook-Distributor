@@ -1,2 +1,5 @@
 requests
 flask
+
+# development
+discord-webhook
