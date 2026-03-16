@@ -1,0 +1,20 @@
+[Unit]
+Description=Webhook Distributor - Flask webhook fan-out proxy
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=__PROJECT_DIR__
+EnvironmentFile=%h/.config/webhook-distributor/webhook-distributor.env
+ExecStart=__PROJECT_DIR__/.venv/bin/python __PROJECT_DIR__/app.py --host ${WEBHOOK_HOST} --port ${WEBHOOK_PORT}
+Restart=on-failure
+RestartSec=5
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+# Watchdog: restart if unresponsive (systemd level)
+WatchdogSec=60
+
+[Install]
+WantedBy=default.target
