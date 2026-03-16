@@ -1,5 +1,6 @@
 from flask import Flask, request, Response
 import requests
+import tyro
 
 app = Flask("Webhook Distributor")
 
@@ -54,7 +55,10 @@ def redirect_to_API_HOST(
     return responses
 
 
-if __name__ == "__main__":
-    # TODO: remove hardcoded port
+def main(host: str = "0.0.0.0", port: int = 3128) -> None:
     # app.run(host="0.0.0.0", port=3128, ssl_context="adhoc")
-    app.run(host="0.0.0.0", port=3128)
+    app.run(host=host, port=port)
+
+
+if __name__ == "__main__":
+    tyro.cli(main)
