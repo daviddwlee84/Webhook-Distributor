@@ -1,14 +1,16 @@
-FROM python:3.8-slim-buster
+FROM python:3.13-slim
 
 WORKDIR /app
 
 ARG PORT=3128
-ENV FLASK_APP "app.py"
-ENV FLASK_DEBUG "1"
-ENV PORT ${PORT}
+ENV PORT=${PORT}
 
-COPY requirements.txt requirements.txt
-RUN pip3 install -r requirements.txt
+COPY pyproject.toml .
+COPY app.py .
+COPY webhooks.txt .
 
-# https://stackoverflow.com/questions/35560894/is-docker-arg-allowed-within-cmd-instruction
-CMD python3 -m flask run --host 0.0.0.0 --port ${PORT}
+RUN pip3 install --no-cache-dir .
+
+EXPOSE ${PORT}
+
+CMD python3 app.py --host 0.0.0.0 --port ${PORT}
