@@ -1413,3 +1413,139 @@ Here's the summary:
 - Adding `tyro` and `loguru` to `requirements.txt` for backward compatibility
 
 The user on the second server needs to rebuild the container: `docker compose up --build`.
+
+---
+
+_**User (2026-03-16 12:13:22Z)**_
+
+Issue fixed.
+
+所以說 systemctl 的配置是用的哪個webhooks 是從webhooks.txt讀取的嗎 還是怎麽配置的？
+
+---
+
+_**Agent (claude-opus-4-6 2026-03-16 12:13:27Z)**_
+
+_**Agent (claude-opus-4-6 2026-03-16 12:13:32Z)**_
+
+看 `webhook-distributor.service` 的 `ExecStart`：
+
+```ini
+ExecStart=__PROJECT_DIR__/.venv/bin/python __PROJECT_DIR__/app.py --host ${WEBHOOK_HOST} --port ${WEBHOOK_PORT}
+```
+
+目前 **沒有傳 `--webhooks`**，所以 systemd 服務會 fallback 到讀取專案目錄下的 `webhooks.txt`。
+
+如果想透過 env 檔配置 webhooks，有兩個做法：
+
+**做法 1（簡單）：** 直接編輯伺服器上的 `webhooks.txt`，然後 `systemctl --user restart webhook-distributor`。
+
+**做法 2（透過 env 傳入）：** 需要修改 service 和 env 檔來支援。要我加這個功能嗎？例如在 `webhook-distributor.env` 裡加一個 `WEBHOOK_URLS` 變數，service 檔裡把它傳給 `--webhooks`。
+
+---
+
+_**User (2026-03-16 12:18:40Z)**_
+
+可以啊 （現在是只要 --webhooks 有配置就會 ignore webhook.txt 對吧）
+
+---
+
+_**Agent (claude-opus-4-6 2026-03-16 12:18:45Z)**_
+
+
+
+對，`app.py` 裡的邏輯是 `--webhooks` 非空就用它，否則 fallback 到 `webhooks.txt`。
+
+我來加上 env 配置支援：
+
+_**Agent (claude-opus-4-6 2026-03-16 12:18:46Z)**_
+
+<tool-use data-tool-type="read" data-tool-name="Read"><details>
+<summary>Tool use: **Read**</summary>
+ `./webhook-distributor.service`
+
+```text
+     1→[Unit]
+     2→Description=Webhook Distributor - Flask webhook fan-out proxy
+     3→After=network-online.target
+     4→Wants=network-online.target
+     5→
+     6→[Service]
+     7→Type=simple
+     8→WorkingDirectory=__PROJECT_DIR__
+     9→EnvironmentFile=%h/.config/webhook-distributor/webhook-distributor.env
+    10→ExecStart=__PROJECT_DIR__/.venv/bin/python __PROJECT_DIR__/app.py --host ${WEBHOOK_HOST} --port ${WEBHOOK_PORT}
+    11→Restart=on-failure
+    12→RestartSec=5
+    13→StartLimitIntervalSec=300
+    14→StartLimitBurst=5
+    15→
+    16→# Watchdog: restart if unresponsive (systemd level)
+    17→WatchdogSec=60
+    18→
+    19→[Install]
+    20→WantedBy=default.target
+    21→
+```
+</details></tool-use>
+
+_**Agent (claude-opus-4-6 2026-03-16 12:18:46Z)**_
+
+<tool-use data-tool-type="read" data-tool-name="Read"><details>
+<summary>Tool use: **Read**</summary>
+ `./webhook-distributor.env.example`
+
+```text
+     1→# Webhook Distributor configuration
+     2→# Edit and restart: systemctl --user restart webhook-distributor
+     3→WEBHOOK_HOST=0.0.0.0
+     4→WEBHOOK_PORT=3128
+     5→
+```
+</details></tool-use>
+
+_**Agent (claude-opus-4-6 2026-03-16 12:18:50Z)**_
+
+<tool-use data-tool-type="write" data-tool-name="Edit"><details>
+<summary>Tool use: **Edit**</summary>
+
+```text
+The file /Volumes/Data/Program/Personal/Webhook-Distributor/webhook-distributor.service has been updated successfully.
+```
+</details></tool-use>
+
+_**Agent (claude-opus-4-6 2026-03-16 12:18:52Z)**_
+
+<tool-use data-tool-type="write" data-tool-name="Edit"><details>
+<summary>Tool use: **Edit**</summary>
+
+```text
+The file /Volumes/Data/Program/Personal/Webhook-Distributor/webhook-distributor.env.example has been updated successfully.
+```
+</details></tool-use>
+
+_**Agent (claude-opus-4-6 2026-03-16 12:18:54Z)**_
+
+確保沒有 CRLF：
+
+_**Agent (claude-opus-4-6 2026-03-16 12:18:56Z)**_
+
+<tool-use data-tool-type="shell" data-tool-name="Bash"><details>
+<summary>Tool use: **Bash**</summary>
+Ensure LF line endings
+
+`perl -pi -e 's/\r\n/\n/g' /Volumes/Data/Program/Personal/Webhook-Distributor/webhook-distributor.service /Volumes/Data/Program/Personal/Webhook-Distributor/webhook-distributor.env.example`
+
+```text
+(Bash completed with no output)
+```
+</details></tool-use>
+
+_**Agent (claude-opus-4-6 2026-03-16 12:19:09Z)**_
+
+Done.邏輯是：
+
+- `WEBHOOK_URLS` **沒設定或為空** → bash 的 `${WEBHOOK_URLS:+...}` 展開為空 → 不傳 `--webhooks` → app 讀 `webhooks.txt`
+- `WEBHOOK_URLS` **有設定** → 展開為 `--webhooks url1 url2 ...` → app 用這些 URL，忽略 `webhooks.txt`
+
+用法：編輯 `~/.config/webhook-distributor/webhook-distributor.env`，取消註解 `WEBHOOK_URLS` 那行填入 URL，然後 `systemctl --user restart webhook-distributor`。
