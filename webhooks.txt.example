@@ -1,0 +1,4 @@
+# Webhook destinations for the docker container (port 3128).
+# One URL per line. Lines starting with '#' and blank lines are ignored.
+# Copy this file to webhooks.txt and replace with your real destinations.
+https://discord.com/api/webhooks/<your-id>/<your-token>

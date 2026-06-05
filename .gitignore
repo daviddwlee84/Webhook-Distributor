@@ -125,6 +125,10 @@ celerybeat.pid
 .env
 webhook-distributor.env
 webhook-distributor.log
+
+# Real webhook destinations contain secret tokens — keep only the *.example files.
+webhooks.txt
+webhooks.systemd.txt
 .venv
 env/
 venv/

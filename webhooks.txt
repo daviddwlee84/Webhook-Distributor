@@ -1,1 +1,0 @@
-https://discord.com/api/webhooks/<your-id>/<your-token>
