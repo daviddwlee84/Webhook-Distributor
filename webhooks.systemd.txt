@@ -1,0 +1,5 @@
+# Webhook destinations for the systemd service (port 13128).
+# This file is SEPARATE from webhooks.txt (used by the docker container on 3128).
+# One URL per line. Lines starting with '#' and blank lines are ignored.
+# Replace the URLs below with the systemd-specific destinations you want.
+https://discord.com/api/webhooks/<your-id>/<your-token>

@@ -64,6 +64,7 @@ def main(
     host: str = "0.0.0.0",
     port: int = 3128,
     webhooks: tuple[str, ...] = (),
+    webhooks_file: str = "webhooks.txt",
     log_file: str = "webhook-distributor.log",
 ) -> None:
     global hosts
@@ -79,17 +80,24 @@ def main(
         hosts = list(webhooks)
         logger.info("Using {} webhook URL(s) from CLI arguments", len(hosts))
     else:
-        webhooks_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "webhooks.txt")
-        if os.path.exists(webhooks_file):
-            with open(webhooks_file, "r") as fp:
-                hosts = [line.strip() for line in fp.readlines() if line.strip()]
-            if not hosts:
-                logger.error("webhooks.txt is empty — no destinations configured")
-                sys.exit(1)
-            logger.info("Loaded {} webhook URL(s) from webhooks.txt", len(hosts))
+        if os.path.isabs(webhooks_file):
+            webhooks_path = webhooks_file
         else:
-            logger.warning("webhooks.txt not found and no --webhooks provided — no destinations configured")
-            logger.warning("Use --webhooks URL1 URL2 ... or create webhooks.txt")
+            webhooks_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), webhooks_file)
+        if os.path.exists(webhooks_path):
+            with open(webhooks_path, "r") as fp:
+                hosts = [
+                    line.strip()
+                    for line in fp.readlines()
+                    if line.strip() and not line.strip().startswith("#")
+                ]
+            if not hosts:
+                logger.error("{} is empty — no destinations configured", webhooks_path)
+                sys.exit(1)
+            logger.info("Loaded {} webhook URL(s) from {}", len(hosts), webhooks_path)
+        else:
+            logger.warning("{} not found and no --webhooks provided — no destinations configured", webhooks_path)
+            logger.warning("Use --webhooks URL1 URL2 ... or create the webhooks file")
             sys.exit(1)
 
     logger.info("Starting Webhook Distributor on {}:{}", host, port)

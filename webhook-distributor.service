@@ -7,7 +7,10 @@ Wants=network-online.target
 Type=simple
 WorkingDirectory=__PROJECT_DIR__
 EnvironmentFile=%h/.config/webhook-distributor/webhook-distributor.env
-ExecStart=/bin/bash -c '__PROJECT_DIR__/.venv/bin/python __PROJECT_DIR__/app.py --host ${WEBHOOK_HOST} --port ${WEBHOOK_PORT} ${WEBHOOK_URLS:+--webhooks $WEBHOOK_URLS}'
+# Default destinations come from webhooks.systemd.txt (separate from docker's webhooks.txt).
+# Optionally override with inline URLs by setting WEBHOOK_URLS in the env file
+# (space-separated). When set, --webhooks takes precedence over --webhooks-file.
+ExecStart=/bin/bash -c '__PROJECT_DIR__/.venv/bin/python __PROJECT_DIR__/app.py --host ${WEBHOOK_HOST} --port ${WEBHOOK_PORT} --log-file webhook-distributor.systemd.log --webhooks-file webhooks.systemd.txt ${WEBHOOK_URLS:+--webhooks $WEBHOOK_URLS}'
 Restart=on-failure
 RestartSec=5
 StartLimitIntervalSec=300
